@@ -10,7 +10,7 @@ bool bfs(int pos, int parent, bool *visited, int *babyfaces, vector<int> *adjace
 int main(int argc, char *args[])
 {
     map<string, int> wrestlers;
-    bool possible = 1;
+    bool bipartite = 1;
     int wrestlersSize;
     string wrestler, oponent1, oponent2;
 
@@ -19,11 +19,8 @@ int main(int argc, char *args[])
     {
         cout << "No such file\n";
         return 0;
-    } else
-    {
-        inputF >> wrestlersSize;
-    }
-
+    } 
+    inputF >> wrestlersSize;
     //Enter wrestler's names into a string array and map
     string names[wrestlersSize];
     for (int i = 0; i < wrestlersSize; i++)
@@ -57,14 +54,12 @@ int main(int argc, char *args[])
     {
         if (visited[i])
             continue;
-        //call the function bfs().
-        possible = bfs(i, 0, visited, babyfaces, adjacencyMatrix);
-        //if not bipartite the partitioning is impossible
-        if (!possible)
+        //bfs()
+        bipartite = bfs(i, 0, visited, babyfaces, adjacencyMatrix);
+        if (!bipartite)
             break;
     }
-    //print No, if impossible.
-    if (!possible)
+    if (!bipartite)
     {
         cout << "No" << endl;
     }
@@ -72,7 +67,6 @@ int main(int argc, char *args[])
     {
         //create vectors.
         vector<string> faces, heels;
-
         for (int i = 0; i < wrestlersSize; i++)
         {
             //push the names if babyfaces are true
