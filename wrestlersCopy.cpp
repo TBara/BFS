@@ -5,7 +5,8 @@
 #include <map>
 using namespace std;
 
-bool bfs(int pos, int parent, bool *visited, int *babyfaces, vector<int> *adjacencyMatrix);
+bool bfs(int pos, int parent, bool *checked, int *babyFaceArr, vector<int> *adjacencyMatrix);
+void printRivaries(int wrestlersSize, int *babyFaceArr, string *names);
 
 int main(int argc, char *args[])
 {
@@ -21,7 +22,6 @@ int main(int argc, char *args[])
         return 0;
     } 
     inputF >> wrestlersSize;
-    //Enter wrestler's names into a string array and map
     string names[wrestlersSize];
     for (int i = 0; i < wrestlersSize; i++)
     {
@@ -32,30 +32,29 @@ int main(int argc, char *args[])
     
     int rivaries;
     inputF >> rivaries;
-    vector<int> adjacencyMatrix[rivaries];
+    vector<int> rivaryMatrix[rivaries];
     
     for (int i = 0; i < rivaries; i++)
     {
         inputF >> oponent1 >> oponent2;
-        adjacencyMatrix[wrestlers[oponent1]].push_back(wrestlers[oponent2]);
-        adjacencyMatrix[wrestlers[oponent2]].push_back(wrestlers[oponent1]);
+        rivaryMatrix[wrestlers[oponent1]].push_back(wrestlers[oponent2]);
+        rivaryMatrix[wrestlers[oponent2]].push_back(wrestlers[oponent1]);
     }
     inputF.close();
 
-    //perform bfs for all the connected components
-    bool visited[wrestlersSize];
-    int babyfaces[wrestlersSize];
+    bool checked[wrestlersSize];
+    int babyFaceArr[wrestlersSize];
     for (int i = 0; i < wrestlersSize; i++)
     {
-        visited[i] = babyfaces[i] = 0;
+        checked[i] = babyFaceArr[i] = 0;
     }
 
     for (int i = 0; i < wrestlersSize; i++)
     {
-        if (visited[i])
+        if (checked[i])
             continue;
-        //bfs()
-        bipartite = bfs(i, 0, visited, babyfaces, adjacencyMatrix);
+        
+        bipartite = bfs(i, 0, checked, babyFaceArr, rivaryMatrix);
         if (!bipartite)
             break;
     }
@@ -65,56 +64,54 @@ int main(int argc, char *args[])
     }
     else
     {
-        //create vectors.
-        vector<string> faces, heels;
-        for (int i = 0; i < wrestlersSize; i++)
-        {
-            //push the names if babyfaces are true
-            if (babyfaces[i])
-                faces.push_back(names[i]);
-            else
-                //otherwise push heels
-                heels.push_back(names[i]);
-        }
-        cout << "Yes\n";
-        cout << "Babyfaces: ";
-        //print the baby faces
-        for (int i = 0; i < faces.size(); i++)
-            cout << faces[i] << " ";
-        cout << endl;
-        //print the heels.
-        cout << "Heels: ";
-        for (int i = heels.size() - 1; i >= 0; i--)
-            cout << heels[i] << " ";
-        cout << endl;
+        printRivaries(wrestlersSize, babyFaceArr, names);
     }
 
     return 0;
 }
 
-bool bfs(int pos, int parent, bool *visited, int *babyfaces, vector<int> *adjacencyMatrix)
+bool bfs(int pos, int parent, bool *checked, int *babyFaceArr, vector<int> *rivaryMatrix)
 {
-    //make the position visited.
-    visited[pos] = 1;
-
-    //assign the node value different to its parent
-    babyfaces[pos] = 1 - babyfaces[parent];
-    //iterate the adjacency matrix
-    for (int i = 0; i < adjacencyMatrix[pos].size(); i++)
+    checked[pos] = 1;
+    babyFaceArr[pos] = 1 - babyFaceArr[parent];
+    
+    for (int i = 0; i < rivaryMatrix[pos].size(); i++)
     {
-        int value = adjacencyMatrix[pos][i];
-        //if the value is not visted call
-        //function bfs() recursively.
-        if (!visited[value])
+        int v = rivaryMatrix[pos][i];
+        if (!checked[v])
         {
-            bfs(value, pos, visited, babyfaces, adjacencyMatrix);
+            bfs(v, pos, checked, babyFaceArr, rivaryMatrix);
         }
         else
         {
-            //if two adjacent nodes have same value graph is                //not bipartite
-            if (babyfaces[value] == babyfaces[pos])
+            if (babyFaceArr[v] == babyFaceArr[pos])
+            {
                 return false;
+            }
         }
     }
     return true;
+}
+
+void printRivaries(int wrestlersSize, int *babyFaceArr, string *names)
+{
+        vector<string> babyFaces, heels;
+        for (int i = 0; i < wrestlersSize; i++)
+        {
+            if (babyFaceArr[i])
+                babyFaces.push_back(names[i]);
+            else
+                heels.push_back(names[i]);
+        }
+        cout << "Yes\n";
+        cout << "Babyfaces: ";
+        
+        for (int i = 0; i < babyFaces.size(); i++)
+            cout << babyFaces[i] << " ";
+        cout << endl;
+        
+        cout << "Heels: ";
+        for (int i = heels.size() - 1; i >= 0; i--)
+            cout << heels[i] << " ";
+        cout << endl;
 }
