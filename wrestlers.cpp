@@ -1,135 +1,134 @@
-#include <bits/stdc++.h>
+/********************************************************
+ * * Author: Tom Barabasz
+ * * Class: CS 325 W2020
+ * * Homework 5
+ * * Breadth First Search Babyface vs Heels: Suppose there are two types of professional wrestlers: “Babyfaces” (“good guys”) and
+ * * “Heels” (“bad guys”). Between any pair of professional wrestlers, there may or may not be a rivalry.
+ * * Suppose we have n wrestlers and we have a list of r pairs of rivalries.
+ * ******************************************************/
+
+#include <vector>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <map>
 using namespace std;
-#define SIZE 100010 //define size
-vector<int> adjacencyMatrix[SIZE];//define a vector (adjacency matrix)
-int babyfaces[SIZE];
-bool visited[SIZE];
 
-//definition of the function bfs()
-//checks if the graph of rivalries list is bipartite or not
-bool bfs(int pos, int parent)
+bool bfs(int pos, int parent, bool *checked, int *babyFaceArr, vector<int> *adjacencyMatrix);
+void printRivaries(int wrestlersSize, int *babyFaceArr, string *names);
+
+int main(int argc, char *args[])
 {
-   //make the position visited.
-   visited[pos] = 1;
+    //Map wrestler names with index
+    map<string, int> wrestlers;
+    bool bipartite = 1;
+    int wrestlersSize;
+    string wrestler, oponent1, oponent2;
 
-   //assign the node value different to its parent
-   babyfaces[pos] = 1 - babyfaces[parent];
-   //iterate the adjacency matrix
-   for (int i = 0;i<adjacencyMatrix[pos].size();i++)
-   {
-       int value = adjacencyMatrix[pos][i];
-       //if the value is not visted call
-       //function bfs() recursively.
-       if (!visited[value])
-       {
-           bfs(value, pos);
-       }
-       else
-       {
-           //if two adjacent nodes have same value graph is                //not bipartite
-           if (babyfaces[value] == babyfaces[pos])
-               return false;
-       }
-   }
-   return true;
+    //Read input data
+    ifstream inputF("data.txt");
+    if (!inputF)
+    {
+        cout << "No such file\n";
+        return 0;
+    } 
+    inputF >> wrestlersSize; //Number of wrestlers
+    string names[wrestlersSize]; //Wrestlers names
+    for (int i = 0; i < wrestlersSize; i++)
+    {
+        inputF >> wrestler;
+        wrestlers[wrestler] = i; //Mapwrestler names and index
+        names[i] = wrestler; //Store wrestler names
+    }
+    
+    int rivaries; 
+    inputF >> rivaries; //Get number of rivaries
+    vector<int> rivaryMatrix[rivaries];
+    
+    //Set rivaries and add edges to the graph
+    for (int i = 0; i < rivaries; i++)
+    {
+        inputF >> oponent1 >> oponent2;
+        rivaryMatrix[wrestlers[oponent1]].push_back(wrestlers[oponent2]);
+        rivaryMatrix[wrestlers[oponent2]].push_back(wrestlers[oponent1]);
+    }
+    inputF.close();
 
+    bool checked[wrestlersSize];
+    int babyFaceArr[wrestlersSize];
+    for (int i = 0; i < wrestlersSize; i++)
+    {
+        checked[i] = babyFaceArr[i] = 0;
+    }
+
+    //Run BFS connected sets
+    for (int i = 0; i < wrestlersSize; i++)
+    {
+        if (checked[i])
+            continue;
+        
+        bipartite = bfs(i, 0, checked, babyFaceArr, rivaryMatrix);
+        if (!bipartite)
+            break;
+    }
+    if (!bipartite)
+    {
+        cout << "No" << endl;
+    }
+    else
+    {
+        printRivaries(wrestlersSize, babyFaceArr, names);
+    }
+
+    return 0;
 }
 
-//definition of the main function
-//takes command line arguments
-int main(int argc, char * args[])
+//Verify graph is bipartite
+bool bfs(int idx, int parent, bool *checked, int *babyFaceArr, vector<int> *rivaryMatrix)
 {
-   //declare the variables
-   int n, j, k, u, v, r;
-   string babyname, rival1, rival2;
-   bool possible = 1;
-   //create a map variable
-   map<string, int> data;
-   //open the input text file
-   ifstream infile(args[1]);
-   //Check if the file exists.
-   if (!infile) {
-       cout << "Error opening file\n";
-       return 0;
-   }
-   //read the the number of wrestlers.
-   infile >> n;
-   //create a string array
-   string names[n + 1];
-   //read the names and store in map
-   for (int i = 0; i<n; i++)
-   {
-       infile >> babyname;
-       data[babyname] = i;
-       names[i] = babyname;
-   }
-   //read the the number of rivalries
-   infile >> r;
-   //read the rivalries listed in pairs.
-   for (int i = 0;i < r;i++)
-   {
-       infile >> rival1 >> rival2;
-       //get the index value of rival1
-       u = data[rival1];
-       //get the index value of rival2
-       v = data[rival2];
-       //adding edges to the graph
-       adjacencyMatrix[u].push_back(v);
-       adjacencyMatrix[v].push_back(u);
-   }
-   //close the input file.
-   infile.close();
-   //gets str, the pointer to the destination string.
-   //make all wrestlers as heels first
-   memset(babyfaces, 0, sizeof babyfaces);
-   //for bfs all nodes are unvisited
-   memset(visited, 0, sizeof visited);
-   //assign all values to 0.
-   babyfaces[0] = 0;
+    checked[idx] = 1;
+    babyFaceArr[idx] = 1 - babyFaceArr[parent];
+    
+    //iterate rivary matrix
+    for (int i = 0; i < rivaryMatrix[idx].size(); i++)
+    {
+        int v = rivaryMatrix[idx][i];
+        if (!checked[v])
+        {
+            //Recursive bfs
+            bfs(v, idx, checked, babyFaceArr, rivaryMatrix);
+        }
+        else
+        {
+            //Not bipartite
+            if (babyFaceArr[v] == babyFaceArr[idx])
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
-   //perform bfs for all the connected components
-   for (int i = 0;i < n;i++)
-   {
-       if (visited[i])
-           continue;
-       //call the function bfs().
-       possible = bfs(i, 0);
-       //if not bipartite the partitioning is impossible
-       if (!possible)
-           break;
-   }
-   //print No, if impossible.
-   if (!possible)
-   {
-       cout << "No" << endl;
-   }
-   else
-   {
-       //create vectors.
-       vector<string> faces, heels;
-
-       for (int i = 0;i < n;i++)
-       {
-           //push the names if babyfaces are true
-           if (babyfaces[i])
-               faces.push_back(names[i]);
-           else
-               //otherwise push heels
-               heels.push_back(names[i]);
-       }
-       cout << "Yes\n";
-       cout << "Babyfaces: ";
-       //print the baby faces
-       for (int i = 0;i<faces.size();i++)
-           cout << faces[i] << " ";
-       cout << endl;
-       //print the heels.
-       cout << "Heels: ";
-       for (int i = heels.size() - 1;i >= 0;i--)
-           cout << heels[i] << " ";
-       cout << endl;
-
-   }
-
-   return 0;
+void printRivaries(int wrestlersSize, int *babyFaceArr, string *names)
+{
+        vector<string> babyFaces, heels;
+        for (int i = 0; i < wrestlersSize; i++)
+        {
+            if (babyFaceArr[i])
+                babyFaces.push_back(names[i]);
+            else
+                heels.push_back(names[i]);
+        }
+        cout << "Yes\n";
+        cout << "Babyfaces: ";
+        
+        for (int i = 0; i < babyFaces.size(); i++)
+            cout << babyFaces[i] << " ";
+        cout << endl;
+        
+        cout << "Heels: ";
+        for (int i = heels.size() - 1; i >= 0; i--)
+            cout << heels[i] << " ";
+        cout << endl;
 }
